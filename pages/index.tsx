@@ -1,9 +1,11 @@
 import {
   useAddress,
   ConnectWallet,
+  useMetadata,
   Web3Button,
   useContract,
   useNFTBalance,
+  MediaRenderer,
 } from "@thirdweb-dev/react";
 import { useState, useEffect, useMemo } from "react";
 
@@ -19,6 +21,8 @@ const App = () => {
   );
   // Hook to check if the user has our NFT
   const { data: nftBalance } = useNFTBalance(editionDrop, address, "0");
+  const { data: metadata, isLoading: isLoadingMetadata } =
+    useMetadata(editionDrop);
 
   const hasClaimedNFT = useMemo(() => {
     return nftBalance && nftBalance.gt(0);
@@ -41,6 +45,7 @@ const App = () => {
   return (
     <div className="mint-nft">
       <h1>Mint your free 🍪DAO Membership NFT</h1>
+      <MediaRenderer src={(metadata as { image: string })?.image} />
       <p>
         balance: {nftBalance?.toString()} <br />
       </p>

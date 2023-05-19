@@ -12,7 +12,8 @@ import { useState, useEffect, useMemo } from "react";
 const App = () => {
   // Use the hooks thirdweb give us.
   const address = useAddress();
-  console.log("👋 Address:", address);
+  //console.log("👋 Address:", address);
+
   // Initialize our Edition Drop contract
   const editionDropAddress = "0x7f2BfBf0E6904b5B6Facec197C64b8eB4b1aBeC1";
   const { contract: editionDrop } = useContract(
@@ -28,6 +29,47 @@ const App = () => {
     return nftBalance && nftBalance.gt(0);
   }, [nftBalance]);
 
+  //array of addresses
+  const [memberAddresses, setMemberAddresses] = useState<string[]>([]);
+
+  //function to shorten someones wallet address
+  const shortenAddress = (address: string) => {
+    return `${address.substring(0, 6)}...${address.substring(
+      address.length - 4
+    )}`;
+  };
+
+  //function to get all the members of the DAO
+  useEffect(() => {
+    if (!hasClaimedNFT) {
+      return;
+    }
+
+    const getMembers = async () => {
+      try {
+        const memberAddress = await editionDrop?.history.getAllClaimerAddresses(
+          0
+        );
+        if (memberAddress) {
+          setMemberAddresses(memberAddress);
+          console.log("Members:", memberAddress);
+        }
+      } catch (error) {
+        console.error("Failed to get members", error);
+      }
+    };
+    getMembers();
+  }, [hasClaimedNFT, editionDrop?.history]);
+
+  const memberList = useMemo(() => {
+    return memberAddresses.map((address) => {
+      return {
+        address,
+        tokenAmount: 1,
+      };
+    });
+  }, [memberAddresses]);
+
   // This is the case where the user hasn't connected their wallet
   // to your web app. Let them call connectWallet.
   if (!address) {
@@ -40,7 +82,40 @@ const App = () => {
       </div>
     );
   }
-
+  // Render the screen where the user can claim their NFT.
+  // If the user has already claimed their NFT we want to display the internal DAO page to them
+  // only DAO members will see this. Render all the members + token amounts.
+  if (hasClaimedNFT) {
+    return (
+      <div className="member-page">
+        <h1>🍪DAO Member Page</h1>
+        <p>Congratulations on being a member</p>
+        <div>
+          <div>
+            <h2>Member List</h2>
+            <table className="card">
+              <thead>
+                <tr>
+                  <th>Address</th>
+                  <th>Token Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {memberList.map((member) => {
+                  return (
+                    <tr key={member.address}>
+                      <td>{shortenAddress(member.address)}</td>
+                      <td>{member.tokenAmount}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
   // Render mint nft screen.
   return (
     <div className="mint-nft">

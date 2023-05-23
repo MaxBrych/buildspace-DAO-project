@@ -220,7 +220,7 @@ const App = () => {
           <Heading>DAO Dashboard</Heading>
         </Center>
         <Center paddingBottom={8}>
-          <Text>Congratulations on being a member</Text>
+          <Text>Congratulations on being a member!</Text>
         </Center>
         <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
           <Card borderRadius={20} padding={6}>

@@ -28,8 +28,10 @@ import {
   GridItem,
   Switch,
   Center,
+  Spinner,
 } from "@chakra-ui/react";
 import { BigNumber } from "ethers";
+import CreateProposal from "../components/CreateProposal";
 
 interface Vote {
   type: number;
@@ -85,9 +87,13 @@ const App = () => {
     )}`;
   };
 
+  const [selectedVotes, setSelectedVotes] = useState<{
+    [proposalId: string]: number;
+  }>({});
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [isVoting, setIsVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
+  const [votedProposals, setVotedProposals] = useState<string[]>([]);
 
   // Retrieve all our existing proposals from the contract.
   useEffect(() => {
@@ -183,9 +189,12 @@ const App = () => {
       };
     });
   }, [memberAddresses]);
-
   {
-    /*if (address && network?.[0].data.chain.id !== ChainId.Mumbai) {
+    /*
+  // This is the case where the user is connected to the wrong network
+  const { data: network } = useNetwork();
+  {
+    if (address && network?.[0].data.chain.id !== ChainId.Mumbai) {
     return (
       <Container className="unsupported-network">
         <Heading fontSize={20}>Please connect to Mumbai</Heading>
@@ -195,7 +204,8 @@ const App = () => {
         </Text>
       </Container>
     );
-  }*/
+    }
+  } */
   }
 
   // This is the case where the user hasn't connected their wallet
@@ -317,6 +327,13 @@ const App = () => {
                           // if it is open for voting, we'll vote on it
                           return vote.vote(proposalId, _vote);
                         }
+
+                        // after successful vote execution
+                        setVotedProposals((prevProposals) => [
+                          ...prevProposals,
+                          proposalId,
+                        ]);
+
                         // if the proposal is not open for voting we just return nothing, letting us continue
                         return;
                       })
@@ -359,6 +376,11 @@ const App = () => {
                   borderRadius={20}
                   key={proposal.proposalId}
                   className="card"
+                  style={
+                    votedProposals.includes(proposal.proposalId)
+                      ? { opacity: 0.5 }
+                      : {}
+                  }
                 >
                   <Heading fontSize={16}>{proposal.description}</Heading>
                   <div>
@@ -369,8 +391,10 @@ const App = () => {
                           id={proposal.proposalId + "-" + type}
                           name={proposal.proposalId}
                           value={type}
-                          //default the "abstain" vote to checked
                           defaultChecked={type === 2}
+                          disabled={votedProposals.includes(
+                            proposal.proposalId
+                          )}
                         />
                         <FormLabel htmlFor={proposal.proposalId + "-" + type}>
                           {label}
@@ -380,13 +404,17 @@ const App = () => {
                   </div>
                 </Card>
               ))}
+
               <Button disabled={isVoting || hasVoted} type="submit">
-                {isVoting
-                  ? "Voting..."
-                  : hasVoted
-                  ? "You Already Voted"
-                  : "Submit Votes"}
+                {isVoting ? (
+                  <Spinner />
+                ) : hasVoted ? (
+                  "You Already Voted"
+                ) : (
+                  "Submit Votes"
+                )}
               </Button>
+
               {!hasVoted && (
                 <small>
                   This will trigger multiple transactions that you will need to
@@ -394,6 +422,7 @@ const App = () => {
                 </small>
               )}
             </form>
+            <CreateProposal />
           </GridItem>
         </SimpleGrid>
       </Container>
